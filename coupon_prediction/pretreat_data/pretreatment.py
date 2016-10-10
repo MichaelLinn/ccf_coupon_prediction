@@ -26,7 +26,7 @@ Date : 消费日期：如果Date=null & Coupon_id != null，该记录表示领�
 import numpy as np
 import pandas as pd
 import datetime
-import pymysql
+import pickle
 
 offline_filename = "../../data/ccf_offline_stage1_train.csv"
 online_filename = "../../data/ccf_online_stage1_train.csv"
@@ -35,7 +35,8 @@ test_filename = "../../data/ccf_offline_stage1_test.csv"
 def load_offline_data(filename = offline_filename):
     """
     load the data_offline
-    convert string_time into timestamp
+    convert string_time into datetime
+    and make the data persistent as a *.pkl
     """
     header = ['User_id','Merchant_id','Coupon_id',
               'Discount_rate','Distance','Date_received','Date']
@@ -47,20 +48,21 @@ def load_offline_data(filename = offline_filename):
             rdate_list.append(datetime.datetime.strptime(data_offline['Date_received'][i],"%Y%m%d"))
         else:
             rdate_list.append('null')
-        if data_offline['Date'] != "null":
+        if data_offline['Date'][i] != "null":
             udate_list.append(datetime.datetime.strptime(data_offline['Date'][i],"%Y%m%d"))
         else:
             udate_list.append("null")
     data_offline['Date_received'] = np.array(rdate_list)
-    data_offline['date'] = np.array(udate_list)
+    data_offline['Date'] = np.array(udate_list)
+    pickle._dump(data_offline,open("offline_train_data.pkl","wb"))
     print(data_offline)
     return data_offline
-
 
 def load_online_data(filename = online_filename):
     """
     load the data_online
-    convert string_time into timestamp
+    convert string_time into datetime
+    and make the data persistent as a *.pkl
     :param filename:
     :return: data_online
     """
@@ -71,7 +73,7 @@ def load_online_data(filename = online_filename):
 
 def load_test_data(filename = test_filename):
     """
-    load the test data
+    load the test data and make the data persistent as a *.pkl
     :param filename:
     :return: data_test
     """
@@ -79,7 +81,6 @@ def load_test_data(filename = test_filename):
               'Discount_rate','Distance','Date_received']
     test_data = pd.read_csv(filename,names = header)
     return test_data
-
 
 def count_coupon_day(Date_received,Date_used):
     day_beforeUsed = []
@@ -89,4 +90,17 @@ def count_coupon_day(Date_received,Date_used):
     day_sorted = sorted(day_beforeUsed,reverse = True)
     print(day_sorted)
 
-load_offline_data()
+def random_test_toCSV(test_data):
+    result_random = []
+    for i in range(len(test_data)):
+        result_random.append(np.random.random())
+    result = np.array(result_random)
+    test_data['result'] = result
+    test_data.to_csv("test_result.csv",index = False , header = False ,
+                     columns = ['User_id','Coupon_id','Date_received','result'])
+
+# random_test_toCSV(load_test_data())
+# test_data = load_test_data()
+# pickle._dump(test_data,open("test_data.pkl","wb"))
+# tem_data = pickle.load(open("offline_train_data.pkl","rb"))
+
