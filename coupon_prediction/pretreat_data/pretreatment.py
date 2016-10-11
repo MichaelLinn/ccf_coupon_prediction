@@ -7,10 +7,10 @@ Created on '2016/10/9' '13:59'
 #online_data
 Action: 0 点击， 1购买，2领取优惠券
 Coupon_id: null表示无优惠券消费，此时Discount_rate和Date_received字段无意义。
-       “fixed”表示该交易是限时低价活动。
+       “fixed” 表示该交易是限时低价活动。
 Discount_rate: x \in [0,1]代表折扣率；x:y表示满x减y；“fixed”表示低价限时优惠；
 Date_received: 领取优惠券日期
-Date: 消费日期：如果Date=null & Coupon_id != null，该记录表示领取优惠券但没有使用；
+Date: 消费日期：  如果Date=null & Coupon_id != null，该记录表示领取优惠券但没有使用；
                 如果Date!=null & Coupon_id = null，则表示普通消费日期；
                 如果Date!=null & Coupon_id != null，则表示用优惠券消费日期；
 
@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 import datetime
 import pickle
-import fnmatch
+
 
 offline_filename = "../../data/ccf_offline_stage1_train.csv"
 online_filename = "../../data/ccf_online_stage1_train.csv"
@@ -85,7 +85,8 @@ def load_test_data(filename = test_filename):
     header = ['User_id','Merchant_id','Coupon_id',
               'Discount_rate','Distance','Date_received']
     test_data = pd.read_csv(filename,names = header)
-    return test_data
+    pickle._dump(test_data,open("./pretreat_test_data/test_data.pkl","wb"))
+    print(test_data)
 
 def count_coupon_day(pklfiname = offline_train_data_pklfilename):
     offline_data = pickle.load(open(pklfiname,"rb"))
@@ -185,24 +186,19 @@ def convert_discount_num(pklfilename = washed_labeled_data_pklfilename):
     washed_data['Discount_rate'] = np.array(discount_rate)
     washed_data['Upper_limit'] = np.array(upper_limit)
     washed_data['Allowance'] = np.array(allowance)
-    print(washed_data)
-
+    # print(washed_data)
+    pickle._dump(washed_data,open(pklfilename,"wb"))
 
 # the training features are "Discount_rate" , "Upper_limit" , "Allowance", "Distance"
 # the class set is {-1,1}
 # file "washed_labeled_data.pkl" is the after pretreatment data set, whose type is pandas.Dataframe
 
+def convert_pkl_toCSV(pklfilename = washed_labeled_data_pklfilename):
+    washed_data = pickle.load(open(pklfilename,"rb"))
+    washed_data.to_csv("washed_labeled_data.csv",header = True,index= False)
 
 
-
-
-
-
-
-
-
-
-
+# convert_pkl_toCSV()
 
 
 

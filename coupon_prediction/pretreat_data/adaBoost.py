@@ -10,6 +10,8 @@ the decision trump classifies the data using only one feature at one time
 """
 
 import numpy as np
+import pandas as pd
+import pickle
 
 class adaBoost:
 
@@ -72,7 +74,7 @@ class adaBoost:
         weight = np.mat(np.ones((m,1))/m)     # init the weight of the data.Normally, we set the initial weight is 1/n
         aggressionClassEst = np.mat(np.zeros((m,1)))
         for i in range(numInt): # classEst == class estimation
-            bestStump,error,classEst = self.buildStump(dataArr,classLabels,weight) # D is a vector of the data's weight
+            bestStump,error,classEst = self.buildStump(dataArr,classLabels,weight) # weight is a vector of the data's weight
             # print("D: ",weight.T)
             alpha = float(0.5 * np.log((1.0 - error)/max(error , 1e-16)))   # alpha is the weighted of the weak classifier
             bestStump['alpha'] = alpha
@@ -93,26 +95,7 @@ class adaBoost:
                 break
         return weakDecisionStumpArr
 
-    """
-    def classify(self,adaboostModel,arr_single):
-        classLabel = []
-        # n_row,n_col = arr_single.shape
-        for i in range(len(adaboostModel)):
-            inequal = adaboostModel[i]['inequal']
-            if inequal == 'lt':
-                if arr_single[adaboostModel[i]['dimension']] <= adaboostModel[i]['threshold']:
-                    classLabel.append(-1)
-                else:
-                    classLabel.append(1)
-            else:
-                if arr_single[adaboostModel[i]['dimension']] >= adaboostModel[i]['threshold']:
-                    classLabel.append(-1)
-                else:
-                    classLabel.append(1)
-            classLabel[i] = classLabel[i] * adaboostModel[i]['alpha']
-        predictValue = np.sign(sum(classLabel))
-        return predictValue
-    """
+
 
     def adaClassify(self,data,adaBoostModel):
         dataMat = np.mat(data)
@@ -120,7 +103,48 @@ class adaBoost:
         for i in range(len(adaBoostModel)):
             classLabels = self.stumpDecisionTree(dataMat,adaBoostModel[i]['dimension'],adaBoostModel[i]['threshold'],adaBoostModel[i]['inequal'])
             aggClassEst += classLabels*adaBoostModel[i]['alpha']
+        predictVals = np.sign(aggClassEst)
+        return predictVals
 
+
+    def load_data(self):
+        """
+        training example:np.matrix([[1., 2.1, 50], [2., 1.1, 50], [1.3, 1., 100], [1., 1., 100], [2., 1., 50]])
+        training feature:"Discount_rate" , "Upper_limit" , "Allowance", "Distance"
+        :return:
+        """
+
+        train_data_pklfile = "washed_labeled_data.pkl"
+        train_dataframe = pickle.load(open(train_data_pklfile, "rb"))
+        train_data = []
+        data_label = []
+        for i in range(50):
+            train_data.append([train_dataframe['Discount_rate'][i],train_dataframe['Upper_limit'][i],
+                               train_dataframe['Allowance'][i],train_dataframe['Distance'][i]])
+            data_label.append(train_dataframe['Label'][i])
+        train_dataMat = np.matrix(train_data)
+        print(train_dataMat)
+        print(data_label)
+
+
+
+adaBoost.load_data(adaBoost)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 
 def main():
     ab = adaBoost()
@@ -131,5 +155,26 @@ def main():
     preditVal = ab.classify(adaBoostTrees,arr)
     print("predictVal:" , preditVal)
 
+
 if __name__ == '__main__':
     main()
+
+def classify(self,adaboostModel,arr_single):
+    classLabel = []
+    # n_row,n_col = arr_single.shape
+    for i in range(len(adaboostModel)):
+        inequal = adaboostModel[i]['inequal']
+        if inequal == 'lt':
+            if arr_single[adaboostModel[i]['dimension']] <= adaboostModel[i]['threshold']:
+                classLabel.append(-1)
+            else:
+                classLabel.append(1)
+        else:
+            if arr_single[adaboostModel[i]['dimension']] >= adaboostModel[i]['threshold']:
+                classLabel.append(-1)
+            else:
+                classLabel.append(1)
+        classLabel[i] = classLabel[i] * adaboostModel[i]['alpha']
+    predictValue = np.sign(sum(classLabel))
+    return predictValue
+"""
