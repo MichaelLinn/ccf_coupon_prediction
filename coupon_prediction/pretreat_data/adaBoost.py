@@ -42,7 +42,7 @@ class adaBoost:
         dataMatrix = np.mat(dataArr)
         labelMat = np.mat(classLabels).T
         m,n = np.shape(dataMatrix)
-        numSteps = 10.0
+        numSteps = 100.0
         bestStump = {}
         bestClassEst = np.mat(np.zeros((m,1)))
         minError = np.inf
@@ -68,7 +68,7 @@ class adaBoost:
                         bestStump['threshold'] = thresholdVal
         return bestStump,minError,bestClassEst
 
-    def adaBoostTrainDecisionStump(self,dataArr,classLabels,numInt=40):
+    def adaBoostTrainDecisionStump(self,dataArr,classLabels,numInt=200):
         weakDecisionStumpArr = []
         m = np.shape(dataArr)[0]
         weight = np.mat(np.ones((m,1))/m)     # init the weight of the data.Normally, we set the initial weight is 1/n
@@ -99,47 +99,111 @@ class adaBoost:
 
     def adaClassify(self,data,adaBoostModel):
         dataMat = np.mat(data)
-        aggClassEst = np.mat(np.zeros((data.shape[0],1)))
+        aggClassEst = np.mat(np.zeros((dataMat.shape[0],1)))
         for i in range(len(adaBoostModel)):
             classLabels = self.stumpDecisionTree(dataMat,adaBoostModel[i]['dimension'],adaBoostModel[i]['threshold'],adaBoostModel[i]['inequal'])
             aggClassEst += classLabels*adaBoostModel[i]['alpha']
-        predictVals = np.sign(aggClassEst)
+        # print(aggClassEst)
+        predictVals = self.sigmoid_function(aggClassEst.tolist())
         return predictVals
+        # return aggClassEst
 
-
-    def load_data(self):
+    def load_train_data(self,i):
         """
         training example:np.matrix([[1., 2.1, 50], [2., 1.1, 50], [1.3, 1., 100], [1., 1., 100], [2., 1., 50]])
         training feature:"Discount_rate" , "Upper_limit" , "Allowance", "Distance"
         :return:
         """
 
-        train_data_pklfile = "washed_labeled_data.pkl"
-        train_dataframe = pickle.load(open(train_data_pklfile, "rb"))
+        train_data_csv_file = "./k_fold_own_data/%d_fold_train_data.csv"%i
+        train_dataframe = pd.read_csv(train_data_csv_file)
         train_data = []
         data_label = []
-        for i in range(50):
+        for i in range(len(train_dataframe)):
             train_data.append([train_dataframe['Discount_rate'][i],train_dataframe['Upper_limit'][i],
                                train_dataframe['Allowance'][i],train_dataframe['Distance'][i]])
             data_label.append(train_dataframe['Label'][i])
         train_dataMat = np.matrix(train_data)
-        print(train_dataMat)
-        print(data_label)
+        # print(train_dataMat)
+        # print(data_label)
+        return train_dataMat,data_label
+
+    def load_test_data(self):
+        test_data_csv_file = "./adaboost_result/test_data.csv"
+        test_data = pd.read_csv(test_data_csv_file)
+        #print(test_data)
+        test_data_list = []
+        for i in range(len(test_data)):
+            test_data_list.append([test_data['Discount_rate'][i],test_data['Upper_limit'][i],
+                                   test_data['Allowance'][i],test_data['Distance'][i]])
+        return test_data_list
+
+
+    def sigmoid_function(self,data):
+        result = []
+        for i in range(len(data)):
+            tem = 1.0 / (1.0 + np.e**(-(data[i][0])))
+            result.append(tem)
+        return result
+
+    def bulid_csv_file(self,result_list, test_data_csv_filename = "../../data/ccf_offline_stage1_test.csv" ):
+        probability = np.array(result_list)
+        header = ['User_id', 'Merchant_id', 'Coupon_id',
+                  'Discount_rate', 'Distance', 'Date_received']
+        test_data = pd.read_csv(test_data_csv_filename,names=header)
+        test_data["Prob"] = probability
+        test_data.to_csv("./adaboost_result/test_result_13_fold.csv", index=False, header=False,
+                         columns=['User_id', 'Coupon_id', 'Date_received', 'Prob'])
 
 
 
-adaBoost.load_data(adaBoost)
+    def build_k_fold_models(self,num_fold = 13):
+        for i in range(num_fold):
+            train_dataMat,data_label = self.load_train_data(i)
+            adaBoostModel = self.adaBoostTrainDecisionStump(train_dataMat,data_label)
+            pickle._dump(adaBoostModel, open("./adaboost_result/adaboost_model%d.pkl" % i, "wb"))
 
 
 
+    def converge_k_fold_predict_vals(self,num_fold = 13):
+        test_data = self.load_test_data()
+        sum_predict_vals = np.zeros((len(test_data)))
+        for i in range(num_fold):
+            adaBoostModel = pickle.load(open("./adaboost_result/adaboost_model%d.pkl"%i,"rb"))
+            tem_result = self.adaClassify(test_data,adaBoostModel)
+            sum_predict_vals += np.array(tem_result)
+        result = sum_predict_vals/num_fold
+        return result.tolist()
 
 
+"""
+training example:np.matrix([[1., 2.1, 50], [2., 1.1, 50], [1.3, 1., 100], [1., 1., 100], [2., 1., 50]])
+training feature:"Discount_rate" , "Upper_limit" , "Allowance", "Distance"
+"""
+ab = adaBoost()
+# test_data_list = ab.load_test_data()
+# num_fold = 13
+# i = 12
+train_dataMat,data_label = ab.load_train_data(2)
+adaBoostModel = ab.adaBoostTrainDecisionStump(train_dataMat,data_label)
+# pickle._dump(adaBoostModel,open("./adaboost_result/adaboost_model%d.pkl"%i,"wb"))
 
 
+#train_dataMat,data_label = ab.load_data()
+#adaBoostTrees = ab.adaBoostTrainDecisionStump(train_dataMat,data_label)
+#pickle._dump(adaBoostTrees,open("./adaboost_result/test2.pkl","wb"))
+#ad_trees = pickle.load(open("./adaboost_result/adaboost_model0.pkl","rb"))
 
-
-
-
+#test_data = ab.load_test_data()
+# print(test_data)
+#result = ab.adaClassify(test_data,ad_trees)
+#ab.bulid_csv_file(result)
+"""
+ab = adaBoost()
+result = ab.converge_k_fold_predict_vals()
+print(result)
+ab.bulid_csv_file(result)
+"""
 
 
 

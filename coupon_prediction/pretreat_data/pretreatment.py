@@ -132,7 +132,7 @@ def label_offline_data(pklfilename = offline_train_data_pklfilename):
     washed_labeled_data = pd.DataFrame(offline_data[offline_data['Label'] != 0])
     washed_labeled_data.to_csv("tem.csv",header=True,index=False)
     washed_labeled_data = pd.read_csv("tem.csv")
-    print(washed_labeled_data)
+    # print(washed_labeled_data)
     # Warning: the index of dataframe cannot be modified,and the slices of the dataframe is not the copy of the dataframe
     #          though we delete a row of the dataframe, we cannot change the indices
 
@@ -149,7 +149,7 @@ def label_offline_data(pklfilename = offline_train_data_pklfilename):
 # there is an ideal that using logistic model to predict the null value
 """
 
-def convert_distance_int(pklfilename = washed_labeled_data_pklfilename):
+def convert_distance_int(pklfilename = washed_labeled_data_pklfilename,targert_filename=washed_labeled_data_pklfilename):
     washed_labeled_data = pickle.load(open(pklfilename,"rb"))
     dis_list = []
     for i in range(len(washed_labeled_data)):
@@ -158,9 +158,9 @@ def convert_distance_int(pklfilename = washed_labeled_data_pklfilename):
         else:
             dis_list.append(12)
     washed_labeled_data['Distance'] = np.array(dis_list)
-    pickle._dump(washed_labeled_data,open(washed_labeled_data_pklfilename,"wb"))
+    pickle._dump(washed_labeled_data,open(targert_filename,"wb"))
 
-def convert_discount_num(pklfilename = washed_labeled_data_pklfilename):
+def convert_discount_num(pklfilename = washed_labeled_data_pklfilename,targert_filename = washed_labeled_data_pklfilename):
     """
     conver the '*:*' into float number
     create two feature: one is total money ,the other is discount money
@@ -177,7 +177,7 @@ def convert_discount_num(pklfilename = washed_labeled_data_pklfilename):
             tem = washed_data['Discount_rate'][i].split(':')
             upper_limit.append(int(tem[0]))
             allowance.append(int(tem[1]))
-            discount_rate.append(int(tem[0])*1.0 / int(tem[1]))
+            discount_rate.append((1 - int(tem[1])*1.0/int(tem[0])))
         else:
             upper_limit.append(100)
             rate = 1 - float( washed_data['Discount_rate'][i] )
@@ -187,7 +187,7 @@ def convert_discount_num(pklfilename = washed_labeled_data_pklfilename):
     washed_data['Upper_limit'] = np.array(upper_limit)
     washed_data['Allowance'] = np.array(allowance)
     # print(washed_data)
-    pickle._dump(washed_data,open(pklfilename,"wb"))
+    pickle._dump(washed_data,open(targert_filename,"wb"))
 
 # the training features are "Discount_rate" , "Upper_limit" , "Allowance", "Distance"
 # the class set is {-1,1}
@@ -202,9 +202,13 @@ def convert_pkl_toCSV(pklfilename = washed_labeled_data_pklfilename):
 
 
 
+# label_offline_data()
+test_pklfilename = "./pretreat_test_data/test_data.pkl"
+targert_filename = "test_dis_data.pkl"
+# convert_distance_int(test_pklfilename,targert_filename)
+# convert_discount_num(targert_filename,targert_filename)
 
-
-
+test_data = pickle.load(open(targert_filename,"rb"))
 
 
 

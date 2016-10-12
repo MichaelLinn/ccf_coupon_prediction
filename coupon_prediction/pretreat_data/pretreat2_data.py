@@ -74,44 +74,42 @@ def label_data(pklfilename = disc_dispose_filename):
     print(train_data['Label'])
     pickle._dump(train_data,open("labeled_data.pkl","wb"))
 
-def k_fold_sampling(pklfilename=labeled_data_pklfilename):
+def k_fold_sampling(pklfilename=labeled_data_pklfilename,target_fold = ""):
     train_data = pickle.load(open(pklfilename,"rb"))
-    positive_data = train_data[train_data['Label'] == '1']
-    negative_data = train_data[train_data['Label'] == '-1']
+    positive_data = train_data[train_data['Label'] == 1]
+    negative_data = train_data[train_data['Label'] == -1]
     sum_p = len(positive_data)
     sum_n = len(negative_data)
     p_index = positive_data.index
     n_index = negative_data.index
-    single_fold_num = int(sum_n/15.1)
+    single_fold_num = int(sum_n/13.9)
     #print(single_fold_num)
     tem_nindex_list = n_index.tolist()
-    for i in range(15):
+    for i in range(13):
         print(len(tem_nindex_list))
         single_fold_index = random.sample(list(tem_nindex_list),single_fold_num)
         tem_index = single_fold_index + p_index.tolist()
-        select_data_toCSV(tem_index,train_data,i)
+        select_data_toCSV(tem_index,train_data,i,target_fold)
         tem_nindex_list = np.setdiff1d(np.array(tem_nindex_list),np.array(single_fold_index))
 
-def select_data_toCSV(index_list,train_data,i,csv_foldname=""):
-    csv_foldname = "./k_fold_own_data"
+def select_data_toCSV(index_list,train_data,i,csv_foldname="./k_fold_own_data/"):
     selected_train_data = train_data.ix[index_list,:]
     selected_train_data.to_csv("%s%d_fold_train_data.csv"%(csv_foldname,i),index=False)
 
 
-
 # test_data = pickle.load(open("./pretreat_test_data/test_data.pkl","rb"))
-filename = "./pretreat_test_data/test_data_dis.pkl"
-target_filename = "./pretreat_test_data/test_data_discount.pkl"
-#convert_distance_feature(filename,target_filename)
+# filename = "./pretreat_test_data/test_data_dis.pkl"
+# target_filename = "./pretreat_test_data/test_data_discount.pkl"
+# convert_distance_feature(filename,target_filename)
 # dispose_Discount_rate(filename,target_filename)
-test_data = pickle.load(open("./pretreat_test_data/test_data_discount.pkl","rb"))
+# test_data = pickle.load(open("./pretreat_test_data/test_data_discount.pkl","rb"))
 
-test_data.to_csv("./pretreat_test_data/test_data_final.csv",index=False)
+# test_data.to_csv("./pretreat_test_data/test_data_final.csv",index=False)
 
-
-
-
-
+train_own_data = pickle.load(open("./washed_labeled_data.pkl","rb"))
+filename = "./washed_labeled_data.pkl"
+foldname = "./k_fold_own_data/"
+k_fold_sampling(filename,foldname)
 
 
 
